@@ -216,6 +216,25 @@ def games_by_rating(request, rating_range):
         'games': games
     })
 
+from django.utils.text import slugify
+
+def games_by_platform(request, platform_slug):
+    # Convert slug back to platform name by matching slugified names
+    platforms = Platform.objects.all()
+    platform = None
+    for p in platforms:
+        if slugify(p.name) == platform_slug:
+            platform = p
+            break
+    if not platform:
+        raise Http404("Platform not found")
+    games = Game.objects.filter(platforms=platform).order_by('-rating')
+    return render(request, 'games/games_by_category.html', {
+        'category_type': 'Platform',
+        'category_name': platform.name,
+        'games': games
+    })
+
 def enhanced_search(user, query, rec_engine):
     """
     Enhanced search yang menggabungkan text search dengan user preferences
@@ -255,7 +274,7 @@ def game_detail(request, game_id):
     game = get_object_or_404(Game, id=game_id)
     
     # Get similar games
-    similar_games = get_similar_games(game, num_similar=6)
+    similar_games = get_similar_games(game, num_similar=10)
     
     # Get user's rating untuk game ini if logged in
     user_rating = None
